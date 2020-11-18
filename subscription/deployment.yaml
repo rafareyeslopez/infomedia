@@ -1,0 +1,190 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: infomedia-db
+  namespace: infomedia
+spec:
+  type: NodePort
+  ports:
+   - port: 5432
+  selector:
+    app: infomedia-db
+  
+---      
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: infomedia-db-volumeclaim
+  namespace: infomedia
+  labels:
+    app: infomedia-db
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: infomedia-db
+  namespace: infomedia
+  labels:
+    app: infomedia-db
+spec:
+  replicas: 1
+  serviceName: infomedia-db
+  selector:
+    matchLabels:
+      app: infomedia-db
+  template:
+    metadata:
+      labels:
+        app: infomedia-db
+    spec:
+      containers:
+        - image: postgres:13-alpine
+          name: infomedia-db
+          resources:
+            requests:
+              memory: "50Mi"
+              cpu: "0.005"
+            limits:
+              memory: "200Mi"
+              cpu: "0.01"               
+          env:
+            - name: POSTGRES_USER
+              value: infomedia
+            - name: POSTGRES_DB
+              value: infomedia
+            - name: POSTGRES_PASSWORD
+              value: infomedia
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - containerPort: 5432
+              name: infomedia-db
+          volumeMounts:
+            - name: infomedia-db-persistent-storage
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: infomedia-db-persistent-storage
+          persistentVolumeClaim:
+            claimName: infomedia-db-volumeclaim
+            
+      nodeSelector:
+        mobile-vas: "true"            
+---
+
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: infomedia-subscription
+  namespace: infomedia    
+spec:
+  selector:
+    app: infomedia-subscription
+  type: NodePort
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infomedia-subscription
+  namespace: infomedia 
+  labels:
+    app: infomedia-subscription
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: infomedia-subscription
+  template:
+    metadata:
+      labels:
+        app: infomedia-subscription
+      annotations:
+        # Annotations to configure Prometheus.
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port:  "8080"          
+    spec:
+      imagePullSecrets:
+      - name: pipeline-docker-registry
+      containers:
+      - name: infomedia-subscription
+        image:  ${CICD_IMAGE}:${CICD_EXECUTION_SEQUENCE}
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+          periodSeconds: 30
+          failureThreshold: 2
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 50
+          timeoutSeconds: 5
+          periodSeconds: 60
+          failureThreshold: 2      
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            memory: "200Mi"
+            cpu: "0.001"
+          limits:
+            memory: "400Mi"
+            
+      nodeSelector:
+        whitelisted: "true"
+
+
+---
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hpa-infomedia-subscription
+  namespace: infomedia 
+spec:
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 100
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: infomedia-subscription
+  minReplicas: 1
+  maxReplicas: 1
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: AverageValue
+        averageValue: 0.1
+  - type: Pods
+    pods:
+      metric:
+        name: rate_jvm_memory_used_bytes_2m
+        selector: {}
+      target:
+        type: AverageValue
+        averageValue: 200Mi
+
+  - type: Pods
+    pods:
+      metric:
+        name: rate_http_server_requests_2m
+        selector: {}
+      target:
+        type: AverageValue
+        averageValue: 50

@@ -1,0 +1,57 @@
+stages:
+- name: Build
+  steps:
+  - runScriptConfig:
+      image: maven:latest
+      shellScript: |-
+        mvn clean package -DskipTests=true -s settings.xml spring-boot:repackage
+      envFrom:
+      - sourceName: github
+        sourceKey: github_token
+        targetKey: GITHUB_TOKEN
+        
+- name: Publish Infomedia Landing Controller
+  steps:
+  - publishImageConfig:
+      dockerfilePath: ./landing/Dockerfile
+      buildContext: .
+      tag: infomedia-landing:${CICD_EXECUTION_SEQUENCE}
+
+- name: Deploy Infomedia Landing Controller
+  steps:
+  - applyYamlConfig:
+      path: ./landing/deployment.yaml   
+
+            
+- name: Publish Infomedia Notification
+  steps:
+  - publishImageConfig:
+      dockerfilePath: ./notification/Dockerfile
+      buildContext: .
+      tag: infomedia-notification:${CICD_EXECUTION_SEQUENCE}
+
+- name: Deploy Infomedia Notification
+  steps:
+  - applyYamlConfig:
+      path: ./notification/deployment.yaml
+      
+- name: Publish Infomedia Subscription
+  steps:
+  - publishImageConfig:
+      dockerfilePath: ./subscription/Dockerfile
+      buildContext: .
+      tag: infomedia-subscription:${CICD_EXECUTION_SEQUENCE}
+
+- name: Deploy Infomedia Subscription
+  steps:
+  - applyYamlConfig:
+      path: ./subscription/deployment.yaml
+      
+- name: Deploy Infomedia Ingress
+  steps:
+  - applyYamlConfig:
+      path: ./ingress.yml
+      
+branch:
+  include:
+  - main

@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: infomedia
+  namespace: infomedia
+spec:
+  rules:
+  - host: arenazone.me
+    http:
+      paths:
+      - backend:
+          serviceName: infomedia-landing
+          servicePort: 8080
+        path: /ca
+      - backend:
+          serviceName: infomedia-notification
+          servicePort: 8080
+        path: /notification
+
+  - host: infomedia.d7l.nl
+    http:
+      paths:
+      - backend:
+          serviceName: infomedia-landing
+          servicePort: 8080
+        path: /ca
+      - backend:
+          serviceName: infomedia-notification
+          servicePort: 8080
+        path: /notification

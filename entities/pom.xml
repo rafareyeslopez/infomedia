@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>com.idbmobile.integration</groupId>
+		<artifactId>infomedia</artifactId>
+		<version>0.0.2-SNAPSHOT</version>
+	</parent>
+
+	<artifactId>infomedia-entities</artifactId>
+	<name>Entities</name>
+	<description></description>
+
+	<properties>
+		<spring-boot.repackage.skip>true</spring-boot.repackage.skip>
+		<sonar.skip>true</sonar.skip>
+	</properties>
+
+	<packaging>jar</packaging>
+
+	<dependencies>
+
+		<dependency>
+			<groupId>com.idbmobile</groupId>
+			<artifactId>mcore-entities-framework</artifactId>
+			<version>0.0.2-RELEASE</version>
+		</dependency>
+
+		<dependency>
+			<groupId>javax.persistence</groupId>
+			<artifactId>javax.persistence-api</artifactId>
+			<scope>compile</scope>
+			<optional>true</optional>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.data</groupId>
+			<artifactId>spring-data-cassandra</artifactId>
+			<scope>compile</scope>
+			<optional>true</optional>
+		</dependency>
+
+	</dependencies>
+
+
+</project>

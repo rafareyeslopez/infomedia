@@ -1,0 +1,14 @@
+{"properties": [
+  {
+    "name": "mcore.queue.notification",
+    "type": "java.lang.String",
+    "description": "RabbitMQ Queue for notifications received on endpoint",
+    "defaultValue": "${artifactID}.notification"
+  },
+  {
+    "name": "mcore.topic.firststep",
+    "type": "java.lang.String",
+    "description": "Kafka topic first step events",
+    "defaultValue": "${artifactID}.firststep"
+  }
+]}
